@@ -1,0 +1,22 @@
+<article>
+    <ul>
+      <li>
+        username: {{ debtor.user.username }}
+      </li>
+      <li>
+        Имя: {{ debtor.user.first_name }}
+      </li>
+      <li>
+        Фамилия: {{ debtor.user.last_name }}
+      </li>
+      <li>
+        Дата: {{ debtor.borrowed_at }}
+      </li>
+      <li>
+        Название: {{ debtor.book.title }}
+      </li>
+      <li>
+        Количество дней, сколько книга на руках: {{ debtor.days_borrowed }}
+      </li>
+    </ul>
+  </article>

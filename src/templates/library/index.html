@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block content %}
+  {% if user.is_authenticated and user.role == 'reader' %}
+    <h1>Книги</h1>
+    {% for book in page_obj %}
+      {% include 'includes/book.html' %}
+      {% if not forloop.last %}<hr>{% endif %}
+    {% endfor %}
+  {% elif user.is_authenticated and user.role == 'librarian' %}
+    <h1>Должники</h1>
+    {% for debtor in debtors %}
+      {% include 'includes/debtor.html' %}
+      {% if not forloop.last %}<hr>{% endif %}
+    {% endfor %}
+  {% endif %}
+  {% include 'includes/paginator.html' %}
+{% endblock %}

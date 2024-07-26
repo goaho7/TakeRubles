@@ -1,0 +1,62 @@
+<article>
+  <ul>
+    <li>
+      Автор: {{ book.author }}
+    </li>
+    <li>
+      Жанр: {{ book.genre }}
+    </li>
+    <li>
+      Название: {{ book.title }}
+      <button class="copy-button" data-clipboard-text="{{ book.title }}">
+        Копировать
+      </button>
+    </li>
+    {% if user.is_authenticated %}
+      {% if book.id in borrow_books %}
+        <form method="post" action="{% url 'library_app:return_book' book_id=book.id %}"> 
+          {% csrf_token %}
+          <button type="submit">Отдать</button>
+        </form>
+      {% else %}
+      <form method="post" action="{% url 'library_app:borrow_book' book_id=book.id %}">
+        {% csrf_token %}
+          <button type="submit">Взять</button>
+        </form>
+      {% endif %}
+    {% endif %}
+  </ul>
+</article>
+
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+      const copyButtons = document.querySelectorAll('.copy-button');
+
+      copyButtons.forEach(button => {
+          button.addEventListener('click', () => {
+              // Создаем временный элемент для копирования текста
+              const tempInput = document.createElement('input');
+              tempInput.value = button.getAttribute('data-clipboard-text');
+              document.body.appendChild(tempInput);
+
+              // Выбираем и копируем текст
+              tempInput.select();
+              document.execCommand('copy');
+
+              // Удаляем временный элемент
+              document.body.removeChild(tempInput);
+
+              // Меняем текст кнопки
+              button.textContent = 'Скопировано!';
+
+              // Восстанавливаем текст кнопки через 2 секунды
+              setTimeout(() => {
+                  button.textContent = 'Копировать';
+              }, 2000);
+          });
+      });
+  });
+</script>
+{% endblock %}

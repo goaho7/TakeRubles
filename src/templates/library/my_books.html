@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block content %}     
+  <h1>Мои книги</h1>
+  {% for book in borrows %}
+    {% include 'includes/my_book.html' %}
+    {% if not forloop.last %}<hr>{% endif %}
+  {% endfor %}
+  {% include 'includes/paginator.html' %}
+{% endblock %}
