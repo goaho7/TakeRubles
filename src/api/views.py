@@ -1,5 +1,7 @@
-from django.contrib.auth.models import User
-from rest_framework import generics, permissions
+from django.utils import timezone
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -7,41 +9,36 @@ from api.serializers import BookSerializer, BorrowSerializer
 from library_app.models import Book, BorrowRecord
 
 
-class BookListView(generics.ListAPIView):
+class BookViewSet(viewsets.ModelViewSet):
     queryset = Book.objects.all()
     serializer_class = BookSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
-
-class BorrowBookView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def post(self, request, book_id):
-        book = Book.objects.get(id=book_id)
-        if not book.is_borrowed:
-            BorrowRecord.objects.create(user=request.user, book=book)
-            book.is_borrowed = True
-            book.save()
+    @action(detail=True, methods=["post"])
+    def borrow(self, request, pk=None):
+        book = self.get_object()
+        if not BorrowRecord.objects.filter(book=book, user=request.user, returned_at__isnull=True).exists():
+            BorrowRecord.objects.create(book=book, user=request.user)
         return Response({"status": "book borrowed"})
 
-
-class ReturnBookView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def post(self, request, book_id):
-        book = Book.objects.get(id=book_id)
-        borrow_record = BorrowRecord.objects.filter(user=request.user, book=book, returned=False).first()
+    @action(detail=True, methods=["post"])
+    def return_book(self, request, pk=None):
+        book = self.get_object()
+        borrow_record = BorrowRecord.objects.filter(book=book, user=request.user, returned_at__isnull=True).first()
         if borrow_record:
-            borrow_record.returned = True
+            borrow_record.returned_at = timezone.now()
             borrow_record.save()
-            book.is_borrowed = False
-            book.save()
-        return Response({"status": "book returned"})
+            return Response({"status": "book returned"})
+        else:
+            return Response({"status": "you did not borrow this book"}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class MyBooksView(generics.ListAPIView):
-    serializer_class = BorrowSerializer
-    permission_classes = [permissions.IsAuthenticated]
+class BorrowedBooksView(APIView):
+    """Список книг на руках"""
 
-    def get_queryset(self):
-        return BorrowRecord.objects.filter(user=self.request.user, returned=False)
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        my_books = request.user.borrow_record.all()
+        serializer = BorrowSerializer(my_books, many=True)
+        return Response(serializer.data)
